@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<students>
+  <student>
+    <name>John Smith</name>
+    <age>18</age>
+    <address>123 Main Street</address>
+    <contact>555-1234</contact>
+  </student>
+  <student>
+    <name>chacha</name>
+    <age>13</age>
+    <address>aunoo</address>
+    <contact>09238</contact>
+  </student>
+  <student>
+    <name>Emily Davis</name>
+    <age>18</age>
+    <address>321 Pine Lane</address>
+    <contact>555-3456</contact>
+  </student>
+  <student>
+    <name>David Wilson</name>
+    <age>19</age>
+    <address>654 Cedar Street</address>
+    <contact>555-7890</contact>
+  </student>
+</students>

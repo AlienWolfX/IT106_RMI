@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<students>
+  <student>
+    <name>John Smith</name>
+    <age>18</age>
+    <address>123 Main Street</address>
+    <contact>555-1234</contact>
+  </student>
+  <student>
+    <name>chacha</name>
+    <age>13</age>
+    <address>aunoo</address>
+    <contact>09238</contact>
+  </student>
+  <student>
+    <name>Emily Wexxter</name>
+    <age>18</age>
+    <address>321 Pine Lane</address>
+    <contact>555-3456</contact>
+  </student>
+  <student>
+    <name>David Wilson</name>
+    <age>19</age>
+    <address>654 Cedar Street</address>
+    <contact>555-7890</contact>
+  </student>
+  <student>
+    <name>Sarah Johnson</name>
+    <age>20</age>
+    <address>789 Oak Avenue</address>
+    <contact>555-2345</contact>
+  </student>
+  <student>
+    <name>Michael Lee</name>
+    <age>17</age>
+    <address>567 Elm Court</address>
+    <contact>555-6789</contact>
+  </student>
+  <student>
+    <name>Emma Thompson</name>
+    <age>19</age>
+    <address>432 Maple Drive</address>
+    <contact>555-9012</contact>
+  </student>
+  <student>
+    <name>Liam Wilson</name>
+    <age>18</age>
+    <address>876 Birch Street</address>
+    <contact>555-3456</contact>
+  </student>
+</students>

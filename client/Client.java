@@ -1,281 +1,144 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileWriter;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
-import org.jdom2.Document;
-import org.jdom2.Element;
+import java.rmi.*;
+import java.awt.FlowLayout;
+import java.io.*;
+import org.jdom2.*;
 import org.jdom2.input.SAXBuilder;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
+import java.util.*;
+import javax.swing.*;
 
-public class Client extends JFrame implements ActionListener {
-    private DefaultListModel<String> studentListModel;
-    private JList<String> studentList;
+public class Client {
+    private static JFrame frame;
+    private static JTextArea resultTextArea;
 
-    public static void main(String[] args) {
+    public static void main(String args[]) {
         SwingUtilities.invokeLater(() -> {
-            Client clientGUI = new Client();
-            clientGUI.createAndShowGUI();
+            createAndShowGUI();
         });
     }
 
-    private void createAndShowGUI() {
-        setTitle("Student Management");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
-        setSize(500, 300);
+    private static void createAndShowGUI() {
+        frame = new JFrame("RMI Client");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 300);
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        JPanel choicePanel = new JPanel();
+        choicePanel.setLayout(new FlowLayout());
+        JLabel choiceLabel = new JLabel("Select an option:");
+        String[] options = {
+            "Add Student",
+            "Delete Student",
+            "Fetch Student",
+            "Update Student",
+            "Extract Data from XML",
+            "Sort students"
+        };
+        JComboBox<String> choiceComboBox = new JComboBox<>(options);
 
-        // Initialize the student list model and JList
-        studentListModel = new DefaultListModel<>();
-        studentList = new JList<>(studentListModel);
-        JScrollPane scrollPane = new JScrollPane(studentList);
+        choicePanel.add(choiceLabel);
+        choicePanel.add(choiceComboBox);
 
-        // Create buttons
-        JButton sortButton = new JButton("Sort");
-        JButton displayButton = new JButton("Display");
-        JButton deleteButton = new JButton("Delete");
-        JButton updateButton = new JButton("Update");
-        JButton extractButton = new JButton("Extract XML");
+        JPanel actionPanel = new JPanel();
+        actionPanel.setLayout(new FlowLayout());
 
-        // Register event listeners for the buttons
-        sortButton.addActionListener(this);
-        displayButton.addActionListener(this);
-        deleteButton.addActionListener(this);
-        updateButton.addActionListener(this);
-        extractButton.addActionListener(this);
+        JButton actionButton = new JButton("Perform Action");
 
-        // Create a panel to hold the buttons
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        buttonPanel.add(sortButton);
-        buttonPanel.add(displayButton);
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(updateButton);
-        buttonPanel.add(extractButton);
-
-        // Add components to the frame
-        add(scrollPane, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
-
-        setVisible(true);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        String command = e.getActionCommand();
-        switch (command) {
-            case "Sort":
-                sortStudents();
-                break;
-            case "Display":
-                displayStudents();
-                break;
-            case "Delete":
-                deleteStudent();
-                break;
-            case "Update":
-                updateStudent();
-                break;
-            case "Extract XML":
-                extractXML();
-                break;
-        }
-    }
-
-    private void sortStudents() {
-    try {
-        // Parse XML to extract student information
-        File xmlFile = new File("C:\\Users\\User\\Downloads\\RMI_JDOM\\RMI\\client\\xml\\stud1.xml");
-        SAXBuilder saxBuilder = new SAXBuilder();
-        Document document = saxBuilder.build(xmlFile);
-
-        Element rootElement = document.getRootElement();
-        List<Element> studentElements = rootElement.getChildren("student");
-
-        // Sort the student elements based on a specific criteria (e.g., name)
-        Collections.sort(studentElements, new Comparator<Element>() {
-            @Override
-            public int compare(Element e1, Element e2) {
-                String name1 = e1.getChildText("name");
-                String name2 = e2.getChildText("name");
-                return name1.compareTo(name2);
-            }
+        actionButton.addActionListener(e -> {
+            int choice = choiceComboBox.getSelectedIndex() + 1;
+            performAction(choice);
         });
-
-        // Clear the studentListModel and populate it with sorted student data
-        studentListModel.clear();
-        for (Element studentElement : studentElements) {
-            String studentName = studentElement.getChildText("name");
-            String studAge = studentElement.getChildText("age");
-            String studAddress = studentElement.getChildText("address");
-            String studContact = studentElement.getChildText("contact");
-
-            String studentData = "Name: " + studentName + ", Age: " + studAge + ", Address: " + studAddress + ", Contact: " + studContact;
-            studentListModel.addElement(studentData);
-        }
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        actionPanel.add(actionButton);
+        resultTextArea = new JTextArea(10, 30);
+        resultTextArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(resultTextArea);
+        contentPanel.add(choicePanel);
+        contentPanel.add(actionPanel);
+        contentPanel.add(scrollPane);
+        frame.getContentPane().add(contentPanel);
+        frame.setVisible(true);
     }
-}
 
-    private void displayStudents() {
+    private static void performAction(int choice) {
+        String name = null, address = null, contact = null;
+        int age = 0;
+
         try {
-            // Parse XML to extract student information
-            File xmlFile = new File("C:\\Users\\User\\Downloads\\RMI_JDOM\\RMI\\client\\xml\\stud1.xml");
-            SAXBuilder saxBuilder = new SAXBuilder();
-            Document document = saxBuilder.build(xmlFile);
+            //type cast sa StudentIntf
+            StudentIntf stub = (StudentIntf) Naming.lookup("rmi://localhost:9100/student");
+
+            switch (choice) {
+                case 1:
+                    name = JOptionPane.showInputDialog("Enter Name:");
+                    age = Integer.parseInt(JOptionPane.showInputDialog("Enter Age:"));
+                    address = JOptionPane.showInputDialog("Enter Address:");
+                    contact = JOptionPane.showInputDialog("Enter Contact:");
+                    stub.addStudent(name, age, address, contact);
+                    setResultText("Student added successfully.");
+                    break;
+
+                case 2:
+                    name = JOptionPane.showInputDialog("Enter Name of the student to delete:");
+                    stub.deleteStudent(name);
+                    setResultText("Student deleted successfully.");
+                    break;
+
+                case 3:
+                    name = JOptionPane.showInputDialog("Enter Name of the student to fetch:");
+                    String studInfo = stub.fetchStudent(name);
+                    setResultText(studInfo);
+                    break;
+
+                case 4:
+                    name = JOptionPane.showInputDialog("Enter Name of the student to update:");
+                    age = Integer.parseInt(JOptionPane.showInputDialog("Enter New Age:"));
+                    address = JOptionPane.showInputDialog("Enter New Address:");
+                    contact = JOptionPane.showInputDialog("Enter New Contact:");
+                    stub.updateStudent(name, age, address, contact);
+                    break;
+
+                case 5:
+                    String xmlFilePath = JOptionPane.showInputDialog("Enter the path to the XML file:");
+                    extractXML(xmlFilePath, stub);
+                    setResultText("Students added successfully.");
+                    break;
+
+                case 6:
+                    String sortField = JOptionPane.showInputDialog("Enter Sort Field:");
+                    String sortedStudent = stub.sortStudent(sortField);
+                    setResultText(sortedStudent);
+                    break;
+
+                default:
+                    setResultText("Invalid choice.");
+                    break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void setResultText(String text) {
+        resultTextArea.setText(text);
+    }
+
+    public static void extractXML(String xmlFilePath, StudentIntf stub) {
+        try {
+            SAXBuilder builder = new SAXBuilder();
+            Document document = builder.build(new File(xmlFilePath));
 
             Element rootElement = document.getRootElement();
-            List<Element> studentElements = rootElement.getChildren("student");
+            List<Element> studentList = rootElement.getChildren("student");
 
-            // Clear the studentListModel and populate it with student data
-            studentListModel.clear();
-            for (Element studentElement : studentElements) {
-                String studentName = studentElement.getChildText("name");
-                String studAge = studentElement.getChildText("age");
-                String studAddress = studentElement.getChildText("address");
-                String studContact = studentElement.getChildText("contact");
+            for (Element studentElement : studentList) {
+                String name = studentElement.getChildText("name");
+                int age = Integer.parseInt(studentElement.getChildText("age"));
+                String address = studentElement.getChildText("address");
+                String contact = studentElement.getChildText("contact");
 
-                String studentData = "Name: " + studentName + ", Age: " + studAge + ", Address: " + studAddress + ", Contact: " + studContact;
-                studentListModel.addElement(studentData);
+                stub.addStudent(name, age, address, contact);
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
-
-    private void deleteStudent() {
-    try {
-        // Parse XML to extract student information
-        File xmlFile = new File("C:\\Users\\User\\Downloads\\RMI_JDOM\\RMI\\client\\xml\\stud1.xml");
-        SAXBuilder saxBuilder = new SAXBuilder();
-        Document document = saxBuilder.build(xmlFile);
-
-        Element rootElement = document.getRootElement();
-        List<Element> studentElements = rootElement.getChildren("student");
-
-        // Display a dialog to select the student to delete
-        String[] studentNames = new String[studentElements.size()];
-        for (int i = 0; i < studentElements.size(); i++) {
-            Element studentElement = studentElements.get(i);
-            String studentName = studentElement.getChildText("name");
-            studentNames[i] = studentName;
-        }
-        String selectedStudent = (String) JOptionPane.showInputDialog(
-                this,
-                "Select a student to delete:",
-                "Delete Student",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                studentNames,
-                studentNames[0]);
-
-        // Find the selected student and remove it from the XML
-        for (Element studentElement : studentElements) {
-            String studentName = studentElement.getChildText("name");
-            if (studentName.equals(selectedStudent)) {
-                studentElement.detach(); // Remove the student element from the XML
-                break;
-            }
-        }
-
-        // Update the XML file
-        XMLOutputter xmlOutputter = new XMLOutputter();
-        xmlOutputter.setFormat(Format.getPrettyFormat());
-        xmlOutputter.output(document, new FileWriter(xmlFile));
-
-        // Update the studentListModel by displaying the remaining students
-        displayStudents();
-
-        JOptionPane.showMessageDialog(this, "Student deleted successfully.", "Delete Student", JOptionPane.INFORMATION_MESSAGE);
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-
-    private void updateStudent() {
-    try {
-        // Parse XML to extract student information
-        File xmlFile = new File("C:\\Users\\User\\Downloads\\RMI_JDOM\\RMI\\client\\xml\\stud1.xml");
-        SAXBuilder saxBuilder = new SAXBuilder();
-        Document document = saxBuilder.build(xmlFile);
-
-        Element rootElement = document.getRootElement();
-        List<Element> studentElements = rootElement.getChildren("student");
-
-        // Retrieve the selected student from the XML
-        int selectedIndex = studentList.getSelectedIndex();
-        if (selectedIndex >= 0 && selectedIndex < studentElements.size()) {
-            Element selectedStudent = studentElements.get(selectedIndex);
-
-            // Prompt the user to enter updated student information
-            String updatedName = JOptionPane.showInputDialog(this, "Enter updated name:");
-            String updatedAge = JOptionPane.showInputDialog(this, "Enter updated age:");
-            String updatedAddress = JOptionPane.showInputDialog(this, "Enter updated address:");
-            String updatedContact = JOptionPane.showInputDialog(this, "Enter updated contact:");
-
-            // Update the student element with the new information
-            selectedStudent.getChild("name").setText(updatedName);
-            selectedStudent.getChild("age").setText(updatedAge);
-            selectedStudent.getChild("address").setText(updatedAddress);
-            selectedStudent.getChild("contact").setText(updatedContact);
-        } else {
-            JOptionPane.showMessageDialog(this, "Please select a student to update.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Update the XML file
-        XMLOutputter xmlOutputter = new XMLOutputter(Format.getPrettyFormat());
-        xmlOutputter.output(document, new FileWriter(xmlFile));
-
-        // Update the studentListModel by re-populating it with the updated student data
-        studentListModel.clear();
-        for (Element studentElement : studentElements) {
-            String studentName = studentElement.getChildText("name");
-            String studAge = studentElement.getChildText("age");
-            String studAddress = studentElement.getChildText("address");
-            String studContact = studentElement.getChildText("contact");
-
-            String studentData = "Name: " + studentName + ", Age: " + studAge + ", Address: " + studAddress + ", Contact: " + studContact;
-            studentListModel.addElement(studentData);
-        }
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-
-    private void extractXML() {
-    try {
-        // Parse XML to extract student information
-        File xmlFile = new File("C:\\Users\\User\\Downloads\\RMI_JDOM\\RMI\\client\\xml\\stud1.xml");
-        SAXBuilder saxBuilder = new SAXBuilder();
-        Document document = saxBuilder.build(xmlFile);
-
-        Element rootElement = document.getRootElement();
-        List<Element> studentElements = rootElement.getChildren("student");
-
-        // Clear the studentListModel and populate it with student data
-        studentListModel.clear();
-        for (Element studentElement : studentElements) {
-            String studentName = studentElement.getChildText("name");
-            String studAge = studentElement.getChildText("age");
-            String studAddress = studentElement.getChildText("address");
-            String studContact = studentElement.getChildText("contact");
-
-            String studentData = "Name: " + studentName + ", Age: " + studAge + ", Address: " + studAddress + ", Contact: " + studContact;
-            studentListModel.addElement(studentData);
-        }
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
 }
